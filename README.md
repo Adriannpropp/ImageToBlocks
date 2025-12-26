@@ -7,7 +7,7 @@ An advanced image importer for the **Geometry Dash 2.2** editor. Transform any P
 
 ## 🚀 Features
 
-* **Pixel-Perfect Accuracy**: Uses Object ID `1520` (2.2 Colorable Pixel), the most optimized object for high-detail art.
+* **Pixel-Perfect Accuracy**: Uses Object ID `211` (2.2 Colorable Pixel), the most optimized object for high-detail art.
 * **HSV Absolute Overrides**: Bypasses the limited Color Channel system. Colors are saved directly to the object using HSVA data, ensuring your art stays colored after saving and reloading.
 * **In-Editor UI**: Adds a dedicated **Green Plus (+)** button to the Editor toolbar for seamless workflow.
 * **Built-in Logger**: Real-time import reports showing image dimensions, pixel data, and placement counts.
