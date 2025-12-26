@@ -37,10 +37,4 @@ This mod is built using the **Geode SDK**.
 * **UI**: Built with custom `Popup` and `TextInput` nodes for a native look and feel.
 
 ## 💻 Building from Source
-
-```bash
-git clone [https://github.com/Adriannpropp/ImageToBlocks.git](https://github.com/Adriannpropp/ImageToBlocks.git)
-cd ImageToBlocks
-cmake -B build -A win32
-cmake --build build --config Release
 Developed by Adriann. Made for creators who care about detail.
