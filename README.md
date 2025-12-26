@@ -1,104 +1,46 @@
-# Image to Blocks - Geode Mod
+# 🖼️ Image to Blocks - Geode Mod
 
-Import images as colored blocks in the Geometry Dash editor.
+An advanced image importer for the **Geometry Dash 2.2** editor. Transform any PNG or JPG into high-fidelity pixel art using native game objects.
 
-## Setup
+![Import Example](https://github.com/Adriannpropp/ImageToBlocks/raw/main/cat.png)
 
-### Prerequisites
-- Geode CLI installed at `C:\geode-sdk\geode.exe`
-- Geode SDK at `C:\GeodeSDK`
-- CMake (comes with Geode CLI)
-- Visual Studio 2022 with C++ desktop development tools
+## 🚀 Features
 
-### Environment Setup
+* **Pixel-Perfect Accuracy**: Uses Object ID `1520` (2.2 Colorable Pixel), the most optimized object for high-detail art.
+* **HSV Absolute Overrides**: Bypasses the limited Color Channel system. Colors are saved directly to the object using HSVA data, ensuring your art stays colored after saving and reloading.
+* **In-Editor UI**: Adds a dedicated **Green Plus (+)** button to the Editor toolbar for seamless workflow.
+* **Built-in Logger**: Real-time import reports showing image dimensions, pixel data, and placement counts.
+* **Performance Controls**: Adjustable `Step` (pixel skipping) and `Scale` settings to manage object counts and prevent lag.
 
-1. **Set the GEODE_SDK environment variable:**
-   - Open Command Prompt as Administrator
-   - Run: `setx GEODE_SDK "C:\GeodeSDK" /M`
-   - Restart your command prompt
+## 🛠️ Installation
 
-2. **Verify your setup:**
-   ```cmd
-   C:\geode-sdk\geode.exe --version
-   ```
+1.  Download the latest `.geode` file from the [Releases](https://github.com/Adriannpropp/ImageToBlocks/releases) page.
+2.  Drop it into your Geometry Dash `geode/mods` folder.
+3.  Restart the game.
 
-## Building
+## 📖 How to Use
 
-### Option 1: Using the build script (easiest)
-```cmd
-build.bat
-```
+1.  Open the **Level Editor**.
+2.  Locate the **Green Plus (+)** button on the top-right toolbar.
+3.  Select your image file.
+4.  **Configure Settings**:
+    * **Step**: Skip pixels to save on object count (Recommended: 2 or 3).
+    * **Scale**: Change the size of individual pixels (Recommended: 0.1).
+5.  Click **Import**.
+6.  Check the **Import Log** popup for details once the process completes.
 
-### Option 2: Manual build
-```cmd
-set GEODE_SDK=C:\GeodeSDK
-mkdir build
-cd build
-cmake .. -A win32 -T host=x64
-cmake --build . --config RelWithDebInfo
-```
+## 🏗️ Technical Specifications
 
-### Option 3: Using Geode CLI
-```cmd
-C:\geode-sdk\geode.exe build
-```
+This mod is built using the **Geode SDK**. 
+* **Decoding**: Powered by `stb_image` for fast, lightweight image processing.
+* **Rendering**: Implements `m_hsv` absolute overrides on `GJSpriteColor` to force custom RGB values onto native objects.
+* **UI**: Built with custom `Popup` and `TextInput` nodes for a native look and feel.
 
-## Installation
+## 💻 Building from Source
 
-After building, your mod will be at:
-- `build/RelWithDebInfo/your.username.imageimporter.geode`
-
-Copy this `.geode` file to:
-- `%LocalAppData%\GeometryDash\geode\mods\`
-
-Or install via Geode CLI:
-```cmd
-C:\geode-sdk\geode.exe mod install build/RelWithDebInfo/your.username.imageimporter.geode
-```
-
-## Usage
-
-1. Open the Geometry Dash editor
-2. Pause the editor (ESC)
-3. Click the "Import Image" button
-4. Select an image file (PNG, JPG, BMP)
-5. Wait for the import to complete
-
-**Note:** Large images (>200x200 pixels) will create many objects and may cause lag!
-
-## Troubleshooting
-
-### CMake can't find Geode SDK
-- Make sure `GEODE_SDK` environment variable is set correctly
-- Restart your terminal after setting environment variables
-
-### Build fails with "cannot find vcvars"
-- Install Visual Studio 2022 with "Desktop development with C++"
-- Make sure you're using an x64 Native Tools Command Prompt
-
-### Mod doesn't load in game
-- Check Geode logs in `%LocalAppData%\GeometryDash\geode\logs\`
-- Make sure you're running the correct GD version (2.206)
-
-### Objects don't have color
-- This is a known limitation - GD's color system requires custom color channels
-- Current version creates geometry only
-
-## Common Errors Fixed
-
-- ✅ Fixed memory leaks with CCImage
-- ✅ Added proper error handling for file loading
-- ✅ Fixed Y-axis flipping for correct image orientation
-- ✅ Added safety checks for large images
-- ✅ Improved object creation with null checks
-- ✅ Added proper state management to prevent multiple simultaneous imports
-
-## To-Do / Improvements
-
-- [ ] Add color channel support for proper block coloring
-- [ ] Add image downsampling for large images
-- [ ] Add progress bar for large imports
-- [ ] Add option to customize block size/type
-- [ ] Add undo/redo support
-- [ ] Optimize batch object creation
-"# ImageToBlocks" 
+```bash
+git clone [https://github.com/Adriannpropp/ImageToBlocks.git](https://github.com/Adriannpropp/ImageToBlocks.git)
+cd ImageToBlocks
+cmake -B build -A win32
+cmake --build build --config Release
+Developed by Adriann. Made for creators who care about detail.
