@@ -1,3 +1,4 @@
+
 # 🖼️ Image to Blocks - Geode Mod
 
 An advanced image importer for the **Geometry Dash 2.2** editor. Transform any PNG or JPG into high-fidelity pixel art using native game objects.
@@ -35,12 +36,4 @@ This mod is built using the **Geode SDK**.
 * **Decoding**: Powered by `stb_image` for fast, lightweight image processing.
 * **Rendering**: Implements `m_hsv` absolute overrides on `GJSpriteColor` to force custom RGB values onto native objects.
 * **UI**: Built with custom `Popup` and `TextInput` nodes for a native look and feel.
-
-## 💻 Building from Source
-
-```bash
-git clone [https://github.com/Adriannpropp/ImageToBlocks.git](https://github.com/Adriannpropp/ImageToBlocks.git)
-cd ImageToBlocks
-cmake -B build -A win32
-cmake --build build --config Release
 Developed by Adriann. Made for creators who care about detail.
