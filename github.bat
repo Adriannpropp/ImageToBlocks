@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-:: Create a popup window for the commit message
+:: 1. Get the commit message via Popup
 for /f "delims=" %%I in ('powershell -Command "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('Enter your commit message:', 'GitHub Upload')"') do set msg=%%I
 
 if "%msg%"=="" (
@@ -11,20 +11,18 @@ if "%msg%"=="" (
 )
 
 echo.
-echo --- SYNCING WITH GITHUB (PULL) ---
-:: This fetches remote changes and merges them
-git pull origin main --rebase
-
-echo.
-echo --- STAGING CHANGES ---
+echo --- 1. STAGING AND COMMITTING LOCAL CHANGES ---
 git add .
-
-echo.
-echo --- COMMITTING: %msg% ---
 git commit -m "%msg%"
 
 echo.
-echo --- PUSHING TO GITHUB ---
+echo --- 2. SYNCING FROM GITHUB (PULLING REMOTE CHANGES) ---
+:: Now that your local work is committed, Git will allow the pull.
+:: This will merge GitHub's files (like the README) with your local code.
+git pull origin main --no-rebase
+
+echo.
+echo --- 3. PUSHING EVERYTHING TO GITHUB ---
 git push origin main
 
 echo.
