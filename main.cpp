@@ -13,54 +13,37 @@
 #include <thread>
 #include <vector>
 #include <algorithm>
+#include <atomic>
+#include <cmath>
+#include <filesystem>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 using namespace geode::prelude;
 
-struct GDHSV { float h, s, v; };
-
-// Pre-calculated data to pass between threads
-struct BlockData {
-    float x, y;
-    ccColor3B color;
-    GDHSV hsv;
+// --- Data Structures ---
+// Added scaleX/Y to support merged blocks
+struct BlockData { 
+    float x, y; 
+    float scaleX, scaleY; 
+    ccColor3B color; 
 };
 
-GDHSV rgbToGdhsv(ccColor3B color) {
-    float r = color.r / 255.0f;
-    float g = color.g / 255.0f;
-    float b = color.b / 255.0f;
-    float max = std::max({r, g, b}), min = std::min({r, g, b});
-    float h, s, v = max;
-    float d = max - min;
-    s = max == 0 ? 0 : d / max;
-
-    if (max == min) h = 0;
-    else {
-        if (max == r) h = (g - b) / d + (g < b ? 6 : 0);
-        else if (max == g) h = (b - r) / d + 2;
-        else h = (r - g) / d + 4;
-        h /= 6;
-    }
-    return { h * 360.0f, s, v };
-}
-
+// --- Popups ---
 class LogPopup : public Popup<std::string> {
 protected:
     bool setup(std::string text) override {
         this->setTitle("Import Report");
-        auto winSize = CCDirector::get()->getWinSize();
-        auto contentSize = m_mainLayer->getContentSize();
+        auto winSize = m_mainLayer->getContentSize();
 
         auto textArea = SimpleTextArea::create(text.c_str(), "chatFont.fnt", 0.6f);
-        textArea->setWidth(contentSize.width - 40);
-        textArea->setPosition(contentSize.width / 2, contentSize.height / 2 + 10);
+        textArea->setWidth(winSize.width - 40);
+        textArea->setPosition(winSize.width / 2, winSize.height / 2 + 10);
         m_mainLayer->addChild(textArea);
 
         auto menu = CCMenu::create();
-        menu->setPosition(contentSize.width / 2, 30);
+        menu->setPosition(winSize.width / 2, 30);
         menu->addChild(CCMenuItemSpriteExtra::create(
             ButtonSprite::create("OK", "goldFont.fnt", "GJ_button_01.png", .8f),
             this, menu_selector(LogPopup::onClose)
@@ -71,7 +54,7 @@ protected:
 public:
     static LogPopup* create(std::string text) {
         auto ret = new LogPopup();
-        if (ret && ret->initAnchored(360.f, 280.f, text)) {
+        if (ret && ret->initAnchored(360.f, 200.f, text)) {
             ret->autorelease();
             return ret;
         }
@@ -80,127 +63,303 @@ public:
     }
 };
 
-class ImportSettingsPopup : public Popup<> {
+class ImportSettingsPopup : public Popup<std::filesystem::path>, public TextInputDelegate {
 protected:
     TextInput* m_stepInput;
     TextInput* m_scaleInput;
-    std::string m_path;
+    CCLabelBMFont* m_infoLabel;
+    CCMenuItemToggler* m_resizeToggle;
+    CCMenuItemToggler* m_mergeToggle; // New Toggle
+    
+    std::filesystem::path m_path;
+    int m_imgW = 0, m_imgH = 0;
+    std::atomic<bool> m_isProcessing{false};
 
-    bool setup() override {
-        this->setTitle("Import Pixel Art");
-        auto cx = m_mainLayer->getContentSize().width / 2;
+    bool setup(std::filesystem::path path) override {
+        m_path = path;
+        this->setTitle("Import Image");
+        auto winSize = m_mainLayer->getContentSize();
+        auto cx = winSize.width / 2;
 
-        m_stepInput = TextInput::create(100.0f, "Step", "chatFont.fnt");
-        m_stepInput->setPosition({cx, m_mainLayer->getContentSize().height - 70});
-        m_stepInput->setString("2");
+        auto dataRes = file::readBinary(m_path);
+        if (dataRes) {
+            auto raw = dataRes.unwrap();
+            int c;
+            stbi_info_from_memory(raw.data(), raw.size(), &m_imgW, &m_imgH, &c);
+        }
+
+        m_infoLabel = CCLabelBMFont::create("Loading...", "chatFont.fnt");
+        m_infoLabel->setScale(0.5f);
+        m_infoLabel->setPosition({cx, winSize.height - 45});
+        m_mainLayer->addChild(m_infoLabel);
+
+        float startY = winSize.height - 80;
+
+        // Step Input
+        m_mainLayer->addChild(createLabel("Step (0 = Auto):", {cx - 60, startY}));
+        m_stepInput = TextInput::create(80.0f, "0", "chatFont.fnt");
+        m_stepInput->setPosition({cx - 60, startY - 25});
+        m_stepInput->setString("0");
         m_stepInput->setCommonFilter(CommonFilter::Uint);
+        m_stepInput->setDelegate(this);
         m_mainLayer->addChild(m_stepInput);
 
-        m_scaleInput = TextInput::create(100.0f, "Scale", "chatFont.fnt");
-        m_scaleInput->setPosition({cx, m_mainLayer->getContentSize().height - 130});
+        // Scale Input
+        m_mainLayer->addChild(createLabel("Visual Scale:", {cx + 60, startY}));
+        m_scaleInput = TextInput::create(80.0f, "0.1", "chatFont.fnt");
+        m_scaleInput->setPosition({cx + 60, startY - 25});
         m_scaleInput->setString("0.1");
         m_scaleInput->setCommonFilter(CommonFilter::Float);
+        m_scaleInput->setDelegate(this);
         m_mainLayer->addChild(m_scaleInput);
 
+        // --- Toggles Row ---
+        auto toggleMenu = CCMenu::create();
+        toggleMenu->setPosition({cx, startY - 65});
+        
+        // Safety Toggle
+        m_resizeToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(ImportSettingsPopup::onToggle), 0.6f);
+        m_resizeToggle->toggle(true);
+        m_resizeToggle->setPosition({-60, 0});
+        toggleMenu->addChild(m_resizeToggle);
+        
+        // Merge Toggle (New)
+        m_mergeToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(ImportSettingsPopup::onToggle), 0.6f);
+        m_mergeToggle->toggle(true); // Default ON for optimization
+        m_mergeToggle->setPosition({60, 0});
+        toggleMenu->addChild(m_mergeToggle);
+        
+        m_mainLayer->addChild(toggleMenu);
+
+        // Toggle Labels
+        auto safeLabel = CCLabelBMFont::create("Smart Safety", "bigFont.fnt");
+        safeLabel->setScale(0.35f);
+        safeLabel->setPosition({cx - 60, startY - 85});
+        m_mainLayer->addChild(safeLabel);
+
+        auto mergeLabel = CCLabelBMFont::create("Merge Blocks", "bigFont.fnt");
+        mergeLabel->setScale(0.35f);
+        mergeLabel->setPosition({cx + 60, startY - 85});
+        mergeLabel->setColor({150, 255, 150}); // Green hint
+        m_mainLayer->addChild(mergeLabel);
+
         auto menu = CCMenu::create();
-        menu->setPosition({cx, 45});
+        menu->setPosition({cx, 40});
         menu->addChild(CCMenuItemSpriteExtra::create(
             ButtonSprite::create("Import", "goldFont.fnt", "GJ_button_01.png", .8f),
             this, menu_selector(ImportSettingsPopup::onImport)
         ));
         m_mainLayer->addChild(menu);
+
+        this->updateStats();
         return true;
     }
 
-    void onImport(CCObject*) {
-        // Using safe utils to prevent exceptions
-        int step = utils::numFromString<int>(m_stepInput->getString()).unwrapOr(2);
-        float scale = utils::numFromString<float>(m_scaleInput->getString()).unwrapOr(0.1f);
-        
-        if (step < 1) step = 1;
+    CCLabelBMFont* createLabel(const char* txt, CCPoint pos) {
+        auto l = CCLabelBMFont::create(txt, "goldFont.fnt");
+        l->setScale(0.5f); l->setPosition(pos); return l;
+    }
 
-        // Run processing in background to avoid freezing the game
-        this->processImageAsync(step, scale);
+    virtual void textChanged(CCTextInputNode* p0) override { this->updateStats(); }
+    void onToggle(CCObject*) { updateStats(); }
+
+    int calculateSafeStep(int w, int h) {
+        int maxDim = std::max(w, h);
+        int step = 1;
+        if (maxDim > 200) step = std::ceil((float)maxDim / 200.0f);
+        while (true) {
+            long long estBlocks = ((long long)w / step) * ((long long)h / step);
+            if (estBlocks <= 10000) break; // Relaxed limit because Merging will reduce count
+            step++;
+        }
+        return step;
+    }
+
+    void updateStats() {
+        if (m_imgW == 0) return;
+        bool safe = m_resizeToggle->isToggled();
+        int userStep = utils::numFromString<int>(m_stepInput->getString()).unwrapOr(0);
+        int step = calculateSafeStep(m_imgW, m_imgH);
+        
+        if (!safe && userStep > 0) step = userStep;
+        
+        int rawCount = (m_imgW / step) * (m_imgH / step);
+        std::string info = fmt::format("{}x{} | Step: {}", m_imgW, m_imgH, step);
+        
+        if (m_mergeToggle->isToggled()) {
+            info += fmt::format("\n~{} Pixels (Merged)", rawCount);
+            m_infoLabel->setColor({100, 255, 255}); // Cyan for optimized
+        } else {
+            info += fmt::format("\n~{} Blocks (Raw)", rawCount);
+            if (rawCount > 10000 && !safe) m_infoLabel->setColor({255, 50, 50});
+            else m_infoLabel->setColor({255, 255, 255});
+        }
+        
+        m_infoLabel->setString(info.c_str());
+    }
+
+    void onImport(CCObject*) {
+        if (m_isProcessing.exchange(true)) return;
+        int userStep = utils::numFromString<int>(m_stepInput->getString()).unwrapOr(0);
+        float scale = utils::numFromString<float>(m_scaleInput->getString()).unwrapOr(0.1f);
+        bool safe = m_resizeToggle->isToggled();
+        bool merge = m_mergeToggle->isToggled();
+        
+        if (userStep < 1) userStep = 1;
+
+        this->processImage(userStep, scale, safe, merge);
         this->onClose(nullptr);
     }
 
-    void processImageAsync(int step, float scale) {
-        std::string pathCopy = m_path;
-        
-        std::thread([pathCopy, step, scale]() {
+    void processImage(int userStep, float scale, bool safe, bool merge) {
+        std::filesystem::path pathCopy = m_path;
+
+        std::thread([this, pathCopy, userStep, scale, safe, merge]() {
+            auto dataRes = file::readBinary(pathCopy);
+            if (!dataRes) return;
+            auto raw = dataRes.unwrap();
+
             int w, h, c;
-            unsigned char* data = stbi_load(pathCopy.c_str(), &w, &h, &c, 4);
-            
-            if (!data) {
-                Loader::get()->queueInMainThread([]{
-                    LogPopup::create("Failed to load image data.")->show();
-                });
-                return;
+            unsigned char* pixels = stbi_load_from_memory(raw.data(), raw.size(), &w, &h, &c, 4);
+            if (!pixels) return;
+
+            // --- Calc Step ---
+            int step = 1;
+            int maxDim = std::max(w, h);
+            if (safe) {
+                if (maxDim > 200) step = std::ceil((float)maxDim / 200.0f);
+                while (((long long)w / step) * ((long long)h / step) > 10000) step++;
+            } else {
+                step = (userStep < 1) ? 1 : userStep;
             }
 
             std::vector<BlockData> blocks;
-            // Reserve memory to prevent reallocation overhead
-            blocks.reserve((w / step) * (h / step));
+            float blockSize = 30.0f * scale;
+            
+            // Grid Dimensions
+            int gridW = (w + step - 1) / step;
+            int gridH = (h + step - 1) / step;
 
-            // Standard block size is 30 units
-            float pixelSize = 30.0f * scale;
-            // Center the image relative to 0,0 (will offset by camera later)
-            float halfW = ((w / step) * pixelSize) / 2.0f;
-            float halfH = ((h / step) * pixelSize) / 2.0f;
+            // Total world size for centering
+            float totalW = gridW * blockSize;
+            float totalH = gridH * blockSize;
+            float startX = -totalW / 2.0f;
+            float startY = totalH / 2.0f;
 
-            for (int y = 0; y < h; y += step) {
-                for (int x = 0; x < w; x += step) {
-                    int idx = (y * w + x) * 4;
-                    if (data[idx + 3] < 128) continue; // Alpha check
+            // Visited array for merging
+            std::vector<bool> visited(gridW * gridH, false);
 
-                    float posX = -halfW + ((x / step) * pixelSize);
-                    float posY = halfH - ((y / step) * pixelSize);
+            for (int gy = 0; gy < gridH; gy++) {
+                for (int gx = 0; gx < gridW; gx++) {
+                    if (visited[gy * gridW + gx]) continue;
 
-                    ccColor3B col = {data[idx], data[idx+1], data[idx+2]};
-                    blocks.push_back({posX, posY, col, rgbToGdhsv(col)});
+                    // Get pixel color at this grid position
+                    int pxX = gx * step;
+                    int pxY = gy * step;
+                    
+                    // Safety check
+                    if (pxX >= w || pxY >= h) continue;
+
+                    int idx = (pxY * w + pxX) * 4;
+                    if (pixels[idx + 3] < 200) { // Alpha Threshold
+                        visited[gy * gridW + gx] = true;
+                        continue;
+                    }
+
+                    ccColor3B baseColor = { pixels[idx], pixels[idx+1], pixels[idx+2] };
+                    
+                    int spanX = 1;
+                    int spanY = 1;
+
+                    if (merge) {
+                        // GREEDY MESHING: Expand Right
+                        while (gx + spanX < gridW) {
+                            int nextX = (gx + spanX) * step;
+                            int nextIdx = (pxY * w + nextX) * 4;
+                            
+                            if (visited[gy * gridW + (gx + spanX)]) break;
+                            if (pixels[nextIdx+3] < 200) break;
+                            
+                            // Exact color match for merging
+                            if (std::abs(pixels[nextIdx] - baseColor.r) > 5 ||
+                                std::abs(pixels[nextIdx+1] - baseColor.g) > 5 ||
+                                std::abs(pixels[nextIdx+2] - baseColor.b) > 5) break;
+                                
+                            spanX++;
+                        }
+
+                        // GREEDY MESHING: Expand Down
+                        bool canExpandY = true;
+                        while (gy + spanY < gridH && canExpandY) {
+                            for (int k = 0; k < spanX; k++) {
+                                int checkX = (gx + k) * step;
+                                int checkY = (gy + spanY) * step;
+                                int checkIdx = (checkY * w + checkX) * 4;
+
+                                if (visited[(gy + spanY) * gridW + (gx + k)]) { canExpandY = false; break; }
+                                if (pixels[checkIdx+3] < 200) { canExpandY = false; break; }
+                                
+                                if (std::abs(pixels[checkIdx] - baseColor.r) > 5 ||
+                                    std::abs(pixels[checkIdx+1] - baseColor.g) > 5 ||
+                                    std::abs(pixels[checkIdx+2] - baseColor.b) > 5) { canExpandY = false; break; }
+                            }
+                            if (canExpandY) spanY++;
+                        }
+                    }
+
+                    // Mark merged area as visited
+                    for (int dy = 0; dy < spanY; dy++) {
+                        for (int dx = 0; dx < spanX; dx++) {
+                            visited[(gy + dy) * gridW + (gx + dx)] = true;
+                        }
+                    }
+
+                    // Calculate Center Position for the merged block
+                    // Center = Start + (Index * Size) + (Span * Size / 2) - (Size / 2) -> Simpler math below
+                    float finalX = startX + (gx * blockSize) + (spanX * blockSize / 2.0f); 
+                    float finalY = startY - (gy * blockSize) - (spanY * blockSize / 2.0f);
+
+                    // Store with non-uniform scale
+                    blocks.push_back({ finalX, finalY, scale * spanX, scale * spanY, baseColor });
                 }
             }
-            stbi_image_free(data);
+            stbi_image_free(pixels);
 
-            // Dispatch back to main thread for object creation
-            Loader::get()->queueInMainThread([blocks, scale]() {
+            Loader::get()->queueInMainThread([blocks, scale, step, safe, merge]() {
                 auto editor = LevelEditorLayer::get();
                 if (!editor) return;
 
-                auto centerPos = editor->m_objectLayer->convertToNodeSpace(CCDirector::get()->getWinSize() / 2);
+                auto center = editor->m_objectLayer->convertToNodeSpace(CCDirector::get()->getWinSize() / 2);
                 int count = 0;
 
                 for (const auto& b : blocks) {
-                    // ID 211 (Solid Square)
-                    auto obj = editor->createObject(211, centerPos + ccp(b.x, b.y), false);
+                    auto obj = editor->createObject(211, center + ccp(b.x, b.y), false);
                     if (obj) {
-                        // 1.10f scale overlap to fix gaps
-                        obj->setScale(scale * 1.10f);
+                        // Apply Merged Scale
+                        obj->setScaleX(b.scaleX);
+                        obj->setScaleY(b.scaleY);
                         
-                        // HSV Override for persistence
-                        if (obj->m_baseColor) 
-                            obj->m_baseColor->m_hsv = { b.hsv.h, b.hsv.s, b.hsv.v, true, true };
-                        if (obj->m_detailColor) 
-                            obj->m_detailColor->m_hsv = { b.hsv.h, b.hsv.s, b.hsv.v, true, true };
+                        if (obj->m_baseColor) {
+                            obj->m_baseColor->m_hsv = { 0, 0, 0, true, true }; // Reset HSV
+                        }
                         
                         obj->setChildColor(b.color);
-                        editor->addToSection(obj);
                         count++;
                     }
                 }
-
-                LogPopup::create(fmt::format("Imported {} blocks successfully.", count))->show();
+                
+                std::string msg = fmt::format("Imported {} objects.", count);
+                if (merge) msg += "\n(Merged Blocks Enabled)";
+                LogPopup::create(msg)->show();
             });
-
         }).detach();
     }
 
 public:
-    static ImportSettingsPopup* create(std::string path) {
+    static ImportSettingsPopup* create(std::filesystem::path path) {
         auto ret = new ImportSettingsPopup();
-        if (ret && ret->initAnchored(260.f, 240.f)) {
+        if (ret && ret->initAnchored(300.f, 260.f, path)) {
             ret->autorelease();
-            ret->m_path = path;
             return ret;
         }
         CC_SAFE_DELETE(ret);
@@ -215,29 +374,25 @@ class $modify(MyEditorUI, EditorUI) {
 
     bool init(LevelEditorLayer* el) {
         if (!EditorUI::init(el)) return false;
-        
-        auto menu = CCMenu::create();
-        auto btn = CCMenuItemSpriteExtra::create(
-            CCSprite::createWithSpriteFrameName("GJ_plusBtn_001.png"), 
-            this, 
-            menu_selector(MyEditorUI::onImportClick)
-        );
-        btn->getNormalImage()->setScale(0.6f);
-        
-        auto winSize = CCDirector::get()->getWinSize();
-        menu->setPosition({winSize.width - 40.f, winSize.height - 75.f});
-        
-        menu->addChild(btn);
-        this->addChild(menu);
+        if (auto menu = this->getChildByID("undo-menu")) {
+            auto btn = CCMenuItemSpriteExtra::create(
+                CCSprite::createWithSpriteFrameName("GJ_plusBtn_001.png"), 
+                this, 
+                menu_selector(MyEditorUI::onImportClick)
+            );
+            btn->getNormalImage()->setScale(0.6f);
+            menu->addChild(btn);
+            menu->updateLayout(); 
+        } 
         return true;
     }
 
     void onImportClick(CCObject*) {
-        auto task = file::pick(file::PickMode::OpenFile, { .filters = {{ "Images", { "*.png", "*.jpg" } }} });
+        auto task = file::pick(file::PickMode::OpenFile, { .filters = {{ "Images", { "*.png", "*.jpg", "*.jpeg" } }} });
         m_fields->m_pickListener.bind([this](Task<Result<std::filesystem::path>>::Event* e) {
             if (auto r = e->getValue()) {
                 if (r->isOk()) {
-                    ImportSettingsPopup::create(r->unwrap().string())->show();
+                    ImportSettingsPopup::create(r->unwrap())->show();
                 }
             }
         });
