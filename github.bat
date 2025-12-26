@@ -4,12 +4,16 @@ setlocal
 :: Create a popup window for the commit message
 for /f "delims=" %%I in ('powershell -Command "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::InputBox('Enter your commit message:', 'GitHub Upload')"') do set msg=%%I
 
-:: Check if the user cancelled or left it empty
 if "%msg%"=="" (
-    echo Upload cancelled: No message provided.
+    echo Upload cancelled.
     pause
     exit /b
 )
+
+echo.
+echo --- SYNCING WITH GITHUB (PULL) ---
+:: This fetches remote changes and merges them
+git pull origin main --rebase
 
 echo.
 echo --- STAGING CHANGES ---
