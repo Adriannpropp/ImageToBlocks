@@ -35,6 +35,4 @@ This mod is built using the **Geode SDK**.
 * **Decoding**: Powered by `stb_image` for fast, lightweight image processing.
 * **Rendering**: Implements `m_hsv` absolute overrides on `GJSpriteColor` to force custom RGB values onto native objects.
 * **UI**: Built with custom `Popup` and `TextInput` nodes for a native look and feel.
-
-## 💻 Building from Source
 Developed by Adriann. Made for creators who care about detail.
