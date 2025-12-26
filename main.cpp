@@ -22,15 +22,35 @@
 
 using namespace geode::prelude;
 
-// --- Data Structures ---
-// Added scaleX/Y to support merged blocks
+// data stuff
+struct GDHSV { float h, s, v; };
 struct BlockData { 
     float x, y; 
     float scaleX, scaleY; 
-    ccColor3B color; 
+    GDHSV hsv; // store hsv
 };
 
-// --- Popups ---
+// helpers
+GDHSV rgbToGdhsv(ccColor3B color) {
+    float r = color.r / 255.0f;
+    float g = color.g / 255.0f;
+    float b = color.b / 255.0f;
+    float max = std::max({r, g, b}), min = std::min({r, g, b});
+    float h, s, v = max;
+    float d = max - min;
+    s = max == 0 ? 0 : d / max;
+
+    if (max == min) h = 0;
+    else {
+        if (max == r) h = (g - b) / d + (g < b ? 6 : 0);
+        else if (max == g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h /= 6;
+    }
+    return { h * 360.0f, s, v };
+}
+
+// popups
 class LogPopup : public Popup<std::string> {
 protected:
     bool setup(std::string text) override {
@@ -69,7 +89,7 @@ protected:
     TextInput* m_scaleInput;
     CCLabelBMFont* m_infoLabel;
     CCMenuItemToggler* m_resizeToggle;
-    CCMenuItemToggler* m_mergeToggle; // New Toggle
+    CCMenuItemToggler* m_mergeToggle;
     
     std::filesystem::path m_path;
     int m_imgW = 0, m_imgH = 0;
@@ -95,7 +115,6 @@ protected:
 
         float startY = winSize.height - 80;
 
-        // Step Input
         m_mainLayer->addChild(createLabel("Step (0 = Auto):", {cx - 60, startY}));
         m_stepInput = TextInput::create(80.0f, "0", "chatFont.fnt");
         m_stepInput->setPosition({cx - 60, startY - 25});
@@ -104,7 +123,6 @@ protected:
         m_stepInput->setDelegate(this);
         m_mainLayer->addChild(m_stepInput);
 
-        // Scale Input
         m_mainLayer->addChild(createLabel("Visual Scale:", {cx + 60, startY}));
         m_scaleInput = TextInput::create(80.0f, "0.1", "chatFont.fnt");
         m_scaleInput->setPosition({cx + 60, startY - 25});
@@ -113,25 +131,21 @@ protected:
         m_scaleInput->setDelegate(this);
         m_mainLayer->addChild(m_scaleInput);
 
-        // --- Toggles Row ---
         auto toggleMenu = CCMenu::create();
         toggleMenu->setPosition({cx, startY - 65});
         
-        // Safety Toggle
         m_resizeToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(ImportSettingsPopup::onToggle), 0.6f);
         m_resizeToggle->toggle(true);
         m_resizeToggle->setPosition({-60, 0});
         toggleMenu->addChild(m_resizeToggle);
         
-        // Merge Toggle (New)
         m_mergeToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(ImportSettingsPopup::onToggle), 0.6f);
-        m_mergeToggle->toggle(true); // Default ON for optimization
+        m_mergeToggle->toggle(true); 
         m_mergeToggle->setPosition({60, 0});
         toggleMenu->addChild(m_mergeToggle);
         
         m_mainLayer->addChild(toggleMenu);
 
-        // Toggle Labels
         auto safeLabel = CCLabelBMFont::create("Smart Safety", "bigFont.fnt");
         safeLabel->setScale(0.35f);
         safeLabel->setPosition({cx - 60, startY - 85});
@@ -140,7 +154,7 @@ protected:
         auto mergeLabel = CCLabelBMFont::create("Merge Blocks", "bigFont.fnt");
         mergeLabel->setScale(0.35f);
         mergeLabel->setPosition({cx + 60, startY - 85});
-        mergeLabel->setColor({150, 255, 150}); // Green hint
+        mergeLabel->setColor({150, 255, 150});
         m_mainLayer->addChild(mergeLabel);
 
         auto menu = CCMenu::create();
@@ -169,7 +183,7 @@ protected:
         if (maxDim > 200) step = std::ceil((float)maxDim / 200.0f);
         while (true) {
             long long estBlocks = ((long long)w / step) * ((long long)h / step);
-            if (estBlocks <= 10000) break; // Relaxed limit because Merging will reduce count
+            if (estBlocks <= 10000) break;
             step++;
         }
         return step;
@@ -188,7 +202,7 @@ protected:
         
         if (m_mergeToggle->isToggled()) {
             info += fmt::format("\n~{} Pixels (Merged)", rawCount);
-            m_infoLabel->setColor({100, 255, 255}); // Cyan for optimized
+            m_infoLabel->setColor({100, 255, 255});
         } else {
             info += fmt::format("\n~{} Blocks (Raw)", rawCount);
             if (rawCount > 10000 && !safe) m_infoLabel->setColor({255, 50, 50});
@@ -223,7 +237,6 @@ protected:
             unsigned char* pixels = stbi_load_from_memory(raw.data(), raw.size(), &w, &h, &c, 4);
             if (!pixels) return;
 
-            // --- Calc Step ---
             int step = 1;
             int maxDim = std::max(w, h);
             if (safe) {
@@ -236,32 +249,26 @@ protected:
             std::vector<BlockData> blocks;
             float blockSize = 30.0f * scale;
             
-            // Grid Dimensions
             int gridW = (w + step - 1) / step;
             int gridH = (h + step - 1) / step;
 
-            // Total world size for centering
             float totalW = gridW * blockSize;
             float totalH = gridH * blockSize;
             float startX = -totalW / 2.0f;
             float startY = totalH / 2.0f;
 
-            // Visited array for merging
             std::vector<bool> visited(gridW * gridH, false);
 
             for (int gy = 0; gy < gridH; gy++) {
                 for (int gx = 0; gx < gridW; gx++) {
                     if (visited[gy * gridW + gx]) continue;
 
-                    // Get pixel color at this grid position
                     int pxX = gx * step;
                     int pxY = gy * step;
-                    
-                    // Safety check
                     if (pxX >= w || pxY >= h) continue;
 
                     int idx = (pxY * w + pxX) * 4;
-                    if (pixels[idx + 3] < 200) { // Alpha Threshold
+                    if (pixels[idx + 3] < 200) { 
                         visited[gy * gridW + gx] = true;
                         continue;
                     }
@@ -272,55 +279,43 @@ protected:
                     int spanY = 1;
 
                     if (merge) {
-                        // GREEDY MESHING: Expand Right
                         while (gx + spanX < gridW) {
                             int nextX = (gx + spanX) * step;
                             int nextIdx = (pxY * w + nextX) * 4;
-                            
                             if (visited[gy * gridW + (gx + spanX)]) break;
                             if (pixels[nextIdx+3] < 200) break;
                             
-                            // Exact color match for merging
-                            if (std::abs(pixels[nextIdx] - baseColor.r) > 5 ||
-                                std::abs(pixels[nextIdx+1] - baseColor.g) > 5 ||
-                                std::abs(pixels[nextIdx+2] - baseColor.b) > 5) break;
-                                
+                            if (std::abs(pixels[nextIdx] - baseColor.r) > 3 ||
+                                std::abs(pixels[nextIdx+1] - baseColor.g) > 3 ||
+                                std::abs(pixels[nextIdx+2] - baseColor.b) > 3) break;
                             spanX++;
                         }
-
-                        // GREEDY MESHING: Expand Down
                         bool canExpandY = true;
                         while (gy + spanY < gridH && canExpandY) {
                             for (int k = 0; k < spanX; k++) {
                                 int checkX = (gx + k) * step;
                                 int checkY = (gy + spanY) * step;
                                 int checkIdx = (checkY * w + checkX) * 4;
-
-                                if (visited[(gy + spanY) * gridW + (gx + k)]) { canExpandY = false; break; }
-                                if (pixels[checkIdx+3] < 200) { canExpandY = false; break; }
-                                
-                                if (std::abs(pixels[checkIdx] - baseColor.r) > 5 ||
-                                    std::abs(pixels[checkIdx+1] - baseColor.g) > 5 ||
-                                    std::abs(pixels[checkIdx+2] - baseColor.b) > 5) { canExpandY = false; break; }
+                                if (visited[(gy + spanY) * gridW + (gx + k)] ||
+                                    pixels[checkIdx+3] < 200 ||
+                                    std::abs(pixels[checkIdx] - baseColor.r) > 3 ||
+                                    std::abs(pixels[checkIdx+1] - baseColor.g) > 3 ||
+                                    std::abs(pixels[checkIdx+2] - baseColor.b) > 3) { canExpandY = false; break; }
                             }
                             if (canExpandY) spanY++;
                         }
                     }
 
-                    // Mark merged area as visited
                     for (int dy = 0; dy < spanY; dy++) {
                         for (int dx = 0; dx < spanX; dx++) {
                             visited[(gy + dy) * gridW + (gx + dx)] = true;
                         }
                     }
 
-                    // Calculate Center Position for the merged block
-                    // Center = Start + (Index * Size) + (Span * Size / 2) - (Size / 2) -> Simpler math below
                     float finalX = startX + (gx * blockSize) + (spanX * blockSize / 2.0f); 
                     float finalY = startY - (gy * blockSize) - (spanY * blockSize / 2.0f);
 
-                    // Store with non-uniform scale
-                    blocks.push_back({ finalX, finalY, scale * spanX, scale * spanY, baseColor });
+                    blocks.push_back({ finalX, finalY, scale * spanX, scale * spanY, rgbToGdhsv(baseColor) });
                 }
             }
             stbi_image_free(pixels);
@@ -335,21 +330,21 @@ protected:
                 for (const auto& b : blocks) {
                     auto obj = editor->createObject(211, center + ccp(b.x, b.y), false);
                     if (obj) {
-                        // Apply Merged Scale
                         obj->setScaleX(b.scaleX);
                         obj->setScaleY(b.scaleY);
-                        
                         if (obj->m_baseColor) {
-                            obj->m_baseColor->m_hsv = { 0, 0, 0, true, true }; // Reset HSV
+                            obj->m_baseColor->m_hsv = { b.hsv.h, b.hsv.s, b.hsv.v, true, true };
+                        }
+                        if (obj->m_detailColor) {
+                            obj->m_detailColor->m_hsv = { b.hsv.h, b.hsv.s, b.hsv.v, true, true };
                         }
                         
-                        obj->setChildColor(b.color);
                         count++;
                     }
                 }
                 
                 std::string msg = fmt::format("Imported {} objects.", count);
-                if (merge) msg += "\n(Merged Blocks Enabled)";
+                if (merge) msg += "\n(Merged Blocks Active)";
                 LogPopup::create(msg)->show();
             });
         }).detach();
