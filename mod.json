@@ -4,11 +4,10 @@
         "win": "2.2074"
     },
     "id": "adriann.importer",
-<<<<<<< HEAD
-    "name": "ImageToBlocks",
+    "name": "Image to Blocks",
     "version": "3.6.0",
     "developer": "Adriann",
-    "description": "A high-performance image importer for the Geometry Dash editor. Uses 2.2-native Colorable Pixels (ID 1520) and HSVA absolute overrides for 1:1 color accuracy. Now includes an interactive step-by-step setup guide.",
+    "description": "A high-performance image importer for the Geometry Dash editor. Uses 2.2-native Colorable Pixels and HSVA absolute overrides for 1:1 color accuracy. Includes an interactive step-by-step tutorial for fixing color tinting issues.",
     "tags": ["editor", "utility", "interface"],
     "resources": {
         "files": [
@@ -16,10 +15,3 @@
         ]
     }
 }
-=======
-    "name": "Image to Blocks",
-    "version": "3.5.1",
-    "developer": "Adriann",
-    "description": "A high-performance image importer for the Geometry Dash editor. Uses 2.2-native Colorable Pixels (ID 1520) and HSVA absolute overrides for 1:1 color accuracy. Includes a built-in import log for troubleshooting."
-}
->>>>>>> f9748aae7b869712d450ac448ae08cd3401f5ab9

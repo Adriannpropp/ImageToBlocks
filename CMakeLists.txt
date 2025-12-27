@@ -22,22 +22,9 @@ message(STATUS "Using Geode SDK: ${GEODE_SDK}")
 add_subdirectory(${GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 # 3. Create Library
-<<<<<<< HEAD
-# FIX: Point to the file inside the src directory
-add_library(${PROJECT_NAME} SHARED
-    src/main.cpp
-)
-
-# 4. Include paths
-# This ensures that #include "stb_image.h" works from inside your src folder
-target_include_directories(${PROJECT_NAME} PUBLIC src)
-
-# 5. Link Geode (This macro handles the heavy lifting)
-=======
 add_library(${PROJECT_NAME} SHARED
     main.cpp
 )
 
 # 4. Link Geode (This macro handles the heavy lifting)
->>>>>>> f9748aae7b869712d450ac448ae08cd3401f5ab9
 setup_geode_mod(${PROJECT_NAME})
