@@ -29,7 +29,7 @@ struct BlockData {
     GDHSV hsv; 
 };
 
-// Robust RGB -> HSV Converter
+// rgv to hsv
 GDHSV rgbToGdhsv(ccColor3B color) {
     float r = color.r / 255.0f;
     float g = color.g / 255.0f;
@@ -244,12 +244,9 @@ protected:
                         obj->setScaleX(b.scaleX); 
                         obj->setScaleY(b.scaleY);
                         
-                        // --- THE FIX IS HERE ---
-                        // These flags tell the engine "Do not hide this object if the center is off-screen"
                         obj->m_isDontFade = true; 
                         obj->m_isDontEnter = true; 
                         
-                        // Your working color logic
                         if (obj->m_baseColor) { 
                             obj->m_baseColor->m_hsv = { b.hsv.h, b.hsv.s, b.hsv.v, true, true };
                         }
