@@ -1,63 +1,21 @@
-<<<<<<< HEAD
 # ImageToBlocks
 
-A geode mod for Gd that automatically resizes images for performance help,
+A Geode mod for Geometry Dash that turns your images into level objects without turning your PC into a space heater.
 
 ## Features
-* **Smart Safety:** automatically edits the quality so ur pc doesnt explode
-* **Block Merging:** combines similar pixels that are next to eachother for more performace and less block usage
-* **HSV Injection:** uses absolute hsv for the best color accuracy 
-* **Background Processing:** runs the block importing on a diff thread so ur ui doesnt explode
+* **Smart Safety:** Automatically scales down quality so you don't accidentally try to spawn a million objects and crash your game.
+* **Block Merging:** Smarter than your average importer. It groups similar pixels together into single, larger blocks using a greedy meshing algorithm to keep your object count low and your FPS high.
+* **Interactive Tutorial:** built in step by step guide for the imports to look good, for it to work, read the tutorial in game or check out [Tutorial](about.md)
+* **Background Processing:** the stuff is on a diff thread so ur ui doesnt kabum
 
-<<<<<<< HEAD
 ## Installation
 1. Install the [Geode Loader](https://geode-sdk.org/).
-2. Click the geode icon, go to downloads and search ImageToBlocks
-3. Click get, and restart game
-4. Congrats, now u have an image importer 👍
-=======
-=======
+2. Open Geometry Dash, click the Geode icon, and go to the "Download" tab.
+3. Search for **Image to Blocks**.
+4. Click 'Install' and restart your game.
+5. Head into the Level Editor and look for the new `+` button in the Undo/Redo menu. 
 
-# 🖼️ Image to Blocks - Geode Mod
+## Support
+If you run into actual bugs, check the [Support Guide](support.md) or message me on Discord: `mc_adriannn`.
 
-An advanced image importer for the **Geometry Dash 2.2** editor. Transform any PNG or JPG into high-fidelity pixel art using native game objects.
-
->>>>>>> f9748aae7b869712d450ac448ae08cd3401f5ab9
-![Import Example]([https://github.com/Adriannpropp/ImageToBlocks/raw/main/cat.pn](https://github.com/Adriannpropp/ImageToBlocks/blob/main/raw/main/cat.png)g)
-
-## 🚀 Features
-
-* **Pixel-Perfect Accuracy**: Uses Object ID `211` (2.2 Colorable Pixel), the most optimized object for high-detail art.
-* **HSV Absolute Overrides**: Bypasses the limited Color Channel system. Colors are saved directly to the object using HSVA data, ensuring your art stays colored after saving and reloading.
-* **In-Editor UI**: Adds a dedicated **Green Plus (+)** button to the Editor toolbar for seamless workflow.
-* **Built-in Logger**: Real-time import reports showing image dimensions, pixel data, and placement counts.
-* **Performance Controls**: Adjustable `Step` (pixel skipping) and `Scale` settings to manage object counts and prevent lag.
-
-## 🛠️ Installation
-
-1.  Download the latest `.geode` file from the [Releases](https://github.com/Adriannpropp/ImageToBlocks/releases) page.
-2.  Drop it into your Geometry Dash `geode/mods` folder.
-3.  Restart the game.
-
-## 📖 How to Use
-
-1.  Open the **Level Editor**.
-2.  Locate the **Green Plus (+)** button on the top-right toolbar.
-3.  Select your image file.
-4.  **Configure Settings**:
-    * **Step**: Skip pixels to save on object count (Recommended: 2 or 3).
-    * **Scale**: Change the size of individual pixels (Recommended: 0.1).
-5.  Click **Import**.
-6.  Check the **Import Log** popup for details once the process completes.
-
-## 🏗️ Technical Specifications
-
-This mod is built using the **Geode SDK**. 
-* **Decoding**: Powered by `stb_image` for fast, lightweight image processing.
-* **Rendering**: Implements `m_hsv` absolute overrides on `GJSpriteColor` to force custom RGB values onto native objects.
-* **UI**: Built with custom `Popup` and `TextInput` nodes for a native look and feel.
-Developed by Adriann. Made for creators who care about detail.
-<<<<<<< HEAD
->>>>>>> f9748aae7b869712d450ac448ae08cd3401f5ab9
-=======
->>>>>>> f9748aae7b869712d450ac448ae08cd3401f5ab9
+Congrats, you're now an art god. 👍
