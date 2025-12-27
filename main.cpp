@@ -30,7 +30,7 @@ struct BlockData {
     ccColor3B color;
 };
 
-// Robust RGB -> HSV Converter
+// Precise RGB -> HSV Converter for Absolute Injection
 GDHSV rgbToGdhsv(ccColor3B color) {
     float r = color.r / 255.0f;
     float g = color.g / 255.0f;
@@ -50,7 +50,7 @@ GDHSV rgbToGdhsv(ccColor3B color) {
         else h = (r - g) / d + 4;
         h /= 6;
     }
-    // GD Range: H(0-360), S(0-1), V(0-1)
+    // GD Range: Hue 0-360, Sat 0-1, Val 0-1
     return { h * 360.0f, s, v };
 }
 
@@ -128,6 +128,7 @@ protected:
 
         auto toggleMenu = CCMenu::create();
         toggleMenu->setPosition({cx, startY - 65});
+        
         m_resizeToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(ImportSettingsPopup::onToggle), 0.6f);
         m_resizeToggle->toggle(true);
         m_resizeToggle->setPosition({-60, 0});
@@ -137,6 +138,7 @@ protected:
         m_mergeToggle->toggle(true); 
         m_mergeToggle->setPosition({60, 0});
         toggleMenu->addChild(m_mergeToggle);
+        
         m_mainLayer->addChild(toggleMenu);
 
         auto safeLabel = CCLabelBMFont::create("Smart Safety", "bigFont.fnt");
@@ -216,10 +218,10 @@ protected:
                     int spX = 1, spY = 1;
 
                     if (merge) {
-                        // Scan Right
-                        while (gx + spX < gW) {
+                        // MERGE CAP = 5 (Safety Zone for ID 211)
+                        while (gx + spX < gW && spX < 5) {
                             int nextX = (gx + spX) * step;
-                            if (nextX >= w) break; // DISTORTION FIX
+                            if (nextX >= w) break; 
                             
                             int checkIdx = (gy * step * w + nextX) * 4;
                             if (visited[gy * gW + (gx + spX)] || pixels[checkIdx+3] < 200 || 
@@ -229,11 +231,10 @@ protected:
                             spX++;
                         }
                         
-                        // Scan Down
                         bool canY = true;
-                        while (gy + spY < gH && canY) {
+                        while (gy + spY < gH && canY && spY < 5) {
                             int nextY = (gy + spY) * step;
-                            if (nextY >= h) { canY = false; break; } // DISTORTION FIX
+                            if (nextY >= h) { canY = false; break; }
                             
                             for (int k = 0; k < spX; k++) {
                                 int checkX = (gx + k) * step;
@@ -251,6 +252,7 @@ protected:
                     float finalX = sX + (gx * blockSize) + (spX * blockSize / 2.0f);
                     float finalY = sY - (gy * blockSize) - (spY * blockSize / 2.0f);
                     
+                    // STORE BOTH: HSV for overriding black levels, RGB for editor preview
                     blocks.push_back({ finalX, finalY, scale * spX, scale * spY, rgbToGdhsv(base), base });
                 }
             }
@@ -261,22 +263,26 @@ protected:
                 if (!editor) return;
                 auto center = editor->m_objectLayer->convertToNodeSpace(CCDirector::get()->getWinSize() / 2);
                 for (const auto& b : blocks) {
+                    // KEEPING ID 211 AS REQUESTED
                     auto obj = editor->createObject(211, center + ccp(b.x, b.y), false);
                     if (obj) {
                         obj->setScaleX(b.scaleX); 
                         obj->setScaleY(b.scaleY);
                         
-                        // VISIBILITY FIX
+                        // Visibility Flags
                         obj->m_isDontFade = true; 
                         obj->m_isDontEnter = true; 
                         
-                        // COLOR FIX: Uses Absolute HSV to bypass black levels
-                        if (obj->m_baseColor) {
-                            // { Hue, Sat, Val, AbsoluteSat, AbsoluteBri }
+                        // FORCE COLOR: Inject Absolute HSV to override level background
+                        // This uses brace initialization {h, s, v, absSat, absBri}
+                        if (obj->m_baseColor) { 
                             obj->m_baseColor->m_hsv = { b.hsv.h, b.hsv.s, b.hsv.v, true, true };
                         }
+                        if (obj->m_detailColor) {
+                            obj->m_detailColor->m_hsv = { b.hsv.h, b.hsv.s, b.hsv.v, true, true };
+                        }
                         
-                        // Backup standard color (for editor visibility before play)
+                        // Fallback tint
                         obj->setColor(b.color);
                         obj->setChildColor(b.color);
                     }
