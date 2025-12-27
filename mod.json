@@ -1,21 +1,21 @@
 {
-    "geode": "4.10.0",
-    "gd": {
-        "win": "2.2074"
-    },
-    "id": "adriann.importer",
-    "name": "Image to Blocks",
-    "version": "1.0.0",
-    "developer": "Adriann",
-    "description": "High-performance image importer for the Geometry Dash editor with optimized block merging.",
-    "links": {
-        "source": "https://github.com/Adriannpropp/ImageToBlocks",
-        "community": "https://discord.gg/UCAgKraDnr"
-    },
-    "resources": {
-        "files": [
-            "resources/*.png"
-        ]
-    }
+	"geode": "4.10.0",
+	"gd": {
+		"win": "2.2074"
+	},
+	"id": "adriann.importer",
+	"name": "Image to Blocks",
+	"version": "1.0.0",
+	"developer": "Adriann",
+	"description": "High-performance image importer for the Geometry Dash editor with optimized block merging.",
+	"links": {
+		"source": "https://github.com/Adriannpropp/ImageToBlocks",
+		"community": "https://discord.gg/UCAgKraDnr"
+	},
+	"resources": {
+		"files": [
+			"resources/*.png"
+		]
+	}
 }
 
