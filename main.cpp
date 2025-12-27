@@ -27,9 +27,10 @@ struct BlockData {
     float x, y; 
     float scaleX, scaleY; 
     GDHSV hsv; 
+    ccColor3B color;
 };
 
-// rgv to hsv
+// Robust RGB -> HSV Converter
 GDHSV rgbToGdhsv(ccColor3B color) {
     float r = color.r / 255.0f;
     float g = color.g / 255.0f;
@@ -49,6 +50,7 @@ GDHSV rgbToGdhsv(ccColor3B color) {
         else h = (r - g) / d + 4;
         h /= 6;
     }
+    // GD Range: H(0-360), S(0-1), V(0-1)
     return { h * 360.0f, s, v };
 }
 
@@ -214,22 +216,42 @@ protected:
                     int spX = 1, spY = 1;
 
                     if (merge) {
+                        // Scan Right
                         while (gx + spX < gW) {
-                            int nIdx = (gy * step * w + (gx + spX) * step) * 4;
-                            if (visited[gy * gW + (gx + spX)] || pixels[nIdx+3] < 200 || std::abs(pixels[nIdx]-base.r)>3 || std::abs(pixels[nIdx+1]-base.g)>3 || std::abs(pixels[nIdx+2]-base.b)>3) break;
+                            int nextX = (gx + spX) * step;
+                            if (nextX >= w) break; // DISTORTION FIX
+                            
+                            int checkIdx = (gy * step * w + nextX) * 4;
+                            if (visited[gy * gW + (gx + spX)] || pixels[checkIdx+3] < 200 || 
+                                std::abs(pixels[checkIdx]-base.r)>3 || 
+                                std::abs(pixels[checkIdx+1]-base.g)>3 || 
+                                std::abs(pixels[checkIdx+2]-base.b)>3) break;
                             spX++;
                         }
+                        
+                        // Scan Down
                         bool canY = true;
                         while (gy + spY < gH && canY) {
+                            int nextY = (gy + spY) * step;
+                            if (nextY >= h) { canY = false; break; } // DISTORTION FIX
+                            
                             for (int k = 0; k < spX; k++) {
-                                int cIdx = ((gy + spY) * step * w + (gx + k) * step) * 4;
-                                if (visited[(gy + spY) * gW + (gx + k)] || pixels[cIdx+3] < 200 || std::abs(pixels[cIdx]-base.r)>3 || std::abs(pixels[cIdx+1]-base.g)>3 || std::abs(pixels[cIdx+2]-base.b)>3) { canY = false; break; }
+                                int checkX = (gx + k) * step;
+                                int cIdx = (nextY * w + checkX) * 4;
+                                if (visited[(gy + spY) * gW + (gx + k)] || pixels[cIdx+3] < 200 || 
+                                    std::abs(pixels[cIdx]-base.r)>3 || 
+                                    std::abs(pixels[cIdx+1]-base.g)>3 || 
+                                    std::abs(pixels[cIdx+2]-base.b)>3) { canY = false; break; }
                             }
                             if (canY) spY++;
                         }
                     }
                     for (int dy = 0; dy < spY; dy++) for (int dx = 0; dx < spX; dx++) visited[(gy + dy) * gW + (gx + dx)] = true;
-                    blocks.push_back({ sX + (gx * blockSize) + (spX * blockSize / 2.0f), sY - (gy * blockSize) - (spY * blockSize / 2.0f), scale * spX, scale * spY, rgbToGdhsv(base) });
+                    
+                    float finalX = sX + (gx * blockSize) + (spX * blockSize / 2.0f);
+                    float finalY = sY - (gy * blockSize) - (spY * blockSize / 2.0f);
+                    
+                    blocks.push_back({ finalX, finalY, scale * spX, scale * spY, rgbToGdhsv(base), base });
                 }
             }
             stbi_image_free(pixels);
@@ -244,12 +266,19 @@ protected:
                         obj->setScaleX(b.scaleX); 
                         obj->setScaleY(b.scaleY);
                         
+                        // VISIBILITY FIX
                         obj->m_isDontFade = true; 
                         obj->m_isDontEnter = true; 
                         
-                        if (obj->m_baseColor) { 
+                        // COLOR FIX: Uses Absolute HSV to bypass black levels
+                        if (obj->m_baseColor) {
+                            // { Hue, Sat, Val, AbsoluteSat, AbsoluteBri }
                             obj->m_baseColor->m_hsv = { b.hsv.h, b.hsv.s, b.hsv.v, true, true };
                         }
+                        
+                        // Backup standard color (for editor visibility before play)
+                        obj->setColor(b.color);
+                        obj->setChildColor(b.color);
                     }
                 }
             });
