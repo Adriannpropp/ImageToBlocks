@@ -1,33 +1,23 @@
-# About ImageToBlocks
+# ImageToBlocks
 
-<<<<<<< HEAD
-This mod was built because manually placing thousands of pixels for level art is a waste of a human life. 
-
-### How it works:
-When you pick an image,the mod looks at the pixels and places them where they need to. Instead of just placing one block per pixel, it checks the ones next to eachother. If they are the same color, it stretches one block to cover the whole area using Cocos2d-x scaling(so cpu no die). This "merging" is the difference between a level that runs at 144fps and a level that won't even open lol
-
-It uses **stb_image** for the heavy lifting and Geode's UI wrappers for the settings menu. It’s built to be fast, safe, and actually usable.
-
-### How to use 
-- Import image, if the image looks weird do the following steps
-1. click **EDIT** in the editor, and select a block.
-2. click **HSV** the button, and set the 3rd row to black (move to bottom)
-3. if it somehow doesnt work, message mc_adriannn on discord 
-=======
-An optimized image importer for Geometry Dash that uses greedy meshing to minimize object count.
+An optimized image importer for Geometry Dash that utilizes greedy meshing to minimize object count and maintain high performance.
 
 ## Features
-* Greedy Meshing: Merges pixels into blocks to keep object counts low.
-* HSVA Overrides: Ensures 1:1 color accuracy.
-* Background Threading: Prevents UI lag during processing.
-* Smart Scaling: Automatically resizes large images for stability.
+* **Greedy Meshing**: Automatically merges adjacent pixels of similar colors into single, larger blocks using Cocos2d-x scaling to keep object counts low.
+* **HSVA Overrides**: Uses absolute color data for 1:1 visual accuracy in the editor.
+* **Asynchronous Processing**: Image decoding and block generation run on a background thread to prevent UI exploding
+* **Smart Safety**: Automatically scales down high  resolution images to prevent ur editor exploding
 
 ## Installation
-1. Install Geode.
-2. Search for Image to Blocks in the index.
-3. Use the + button in the editor menu.
+1. Install the [Geode Loader](https://geode-sdk.org/).
+2. Search for **Image to Blocks** in the Geode in-game index.
+3. Once installed, access the importer via the new **+** button in the editor's Undo/Redo menu.
+
+## Quick Start Guide
+To ensure the best visual results, follow the built-in tutorial or these steps:
+1. Select the block type you wish to use for pixels.
+2. In the color settings, set the **Base Color to BLACK** (or Neutral) to avoid unwanted tinting.
+3. Adjust the **Tolerance** slider to control how strictly colors are merged.
 
 ## Support
-Contact mc_adriannn on Discord or open a GitHub issue.
-
->>>>>>> 0156be470c219ba556209fb2c20ce2f3b299902a
+For bug reports or technical help, please open an issue on the GitHub repository or contact `mc_adriannn` on Discord.
