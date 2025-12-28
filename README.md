@@ -1,5 +1,6 @@
 # About ImageToBlocks
 
+<<<<<<< HEAD
 This mod was built because manually placing thousands of pixels for level art is a waste of a human life. 
 
 ### How it works:
@@ -12,3 +13,21 @@ It uses **stb_image** for the heavy lifting and Geode's UI wrappers for the sett
 1. click **EDIT** in the editor, and select a block.
 2. click **HSV** the button, and set the 3rd row to black (move to bottom)
 3. if it somehow doesnt work, message mc_adriannn on discord 
+=======
+An optimized image importer for Geometry Dash that uses greedy meshing to minimize object count.
+
+## Features
+* Greedy Meshing: Merges pixels into blocks to keep object counts low.
+* HSVA Overrides: Ensures 1:1 color accuracy.
+* Background Threading: Prevents UI lag during processing.
+* Smart Scaling: Automatically resizes large images for stability.
+
+## Installation
+1. Install Geode.
+2. Search for Image to Blocks in the index.
+3. Use the + button in the editor menu.
+
+## Support
+Contact mc_adriannn on Discord or open a GitHub issue.
+
+>>>>>>> 0156be470c219ba556209fb2c20ce2f3b299902a

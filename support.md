@@ -1,5 +1,7 @@
 # Support
+For bugs or help, contact `mc_adriannn` on Discord or open a GitHub issue in this repository.
 
+<<<<<<< HEAD
 If the mod isn't working, it's probably because you didn't read the [Tutorial](about.md). Go read that first.
 
 ## How to get help
@@ -22,3 +24,5 @@ If you follow those rules, I'll probably help you. 👍
 =======
 If you follow those rules, I'll probably help you. 👍
 >>>>>>> d153b8b9565b2abc9b70ef8a20728ae4e1d7d197
+=======
+>>>>>>> 0156be470c219ba556209fb2c20ce2f3b299902a

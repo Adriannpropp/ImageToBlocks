@@ -23,3 +23,7 @@ add_library(${PROJECT_NAME} SHARED
 target_include_directories(${PROJECT_NAME} PUBLIC src)
 
 setup_geode_mod(${PROJECT_NAME})
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0156be470c219ba556209fb2c20ce2f3b299902a
