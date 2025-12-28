@@ -1,11 +1,9 @@
-# Geode/Build artifacts
 /build/
 /_deps/
 /.geode/
 *.geode
 *.geode.check
 
-# Visual Studio junk
 .vs/
 *.user
 *.sln
@@ -21,6 +19,10 @@
 *.ilk
 *.idb
 
-# OS specific
 .DS_Store
 Thumbs.db
+
+*.bat
+build.bat
+GitHub.bat
+release.bat

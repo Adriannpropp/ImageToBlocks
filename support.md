@@ -17,4 +17,8 @@ If you've actually found a legitimate bug or the game is crashing even with **Sm
 * Asking for a mobile port (it happens when it happens).
 * General "how do I use the editor" questions.
 
+<<<<<<< HEAD
 If you follow those rules, I'll probably help you. 👍
+=======
+If you follow those rules, I'll probably help you. 👍
+>>>>>>> d153b8b9565b2abc9b70ef8a20728ae4e1d7d197

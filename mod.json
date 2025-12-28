@@ -1,17 +1,20 @@
 {
-    "geode": "4.10.0",
-    "gd": {
-        "win": "2.2074"
-    },
-    "id": "adriann.importer",
-    "name": "Image to Blocks",
-    "version": "3.6.0",
-    "developer": "Adriann",
-    "description": "A high-performance image importer for the Geometry Dash editor. Uses 2.2-native Colorable Pixels and HSVA absolute overrides for 1:1 color accuracy. Includes an interactive step-by-step tutorial for fixing color tinting issues.",
-    "tags": ["editor", "utility", "interface"],
-    "resources": {
-        "files": [
-            "resources/*.png"
-        ]
-    }
+	"geode": "4.10.0",
+	"gd": {
+		"win": "2.2074"
+	},
+	"id": "adriann.importer",
+	"name": "Image to Blocks",
+	"version": "1.0.0",
+	"developer": "Adriann",
+	"description": "High-performance image importer for the Geometry Dash editor with optimized block merging.",
+	"links": {
+		"source": "https://github.com/Adriannpropp/ImageToBlocks",
+		"community": "https://discord.gg/UCAgKraDnr"
+	},
+	"resources": {
+		"files": [
+			"resources/*.png"
+		]
+	}
 }

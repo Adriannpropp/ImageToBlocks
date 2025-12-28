@@ -1,39 +1,14 @@
+# About ImageToBlocks
 
-# 🖼️ Image to Blocks - Geode Mod
+This mod was built because manually placing thousands of pixels for level art is a waste of a human life. 
 
-An advanced image importer for the **Geometry Dash 2.2** editor. Transform any PNG or JPG into high-fidelity pixel art using native game objects.
+### How it works:
+When you pick an image,the mod looks at the pixels and places them where they need to. Instead of just placing one block per pixel, it checks the ones next to eachother. If they are the same color, it stretches one block to cover the whole area using Cocos2d-x scaling(so cpu no die). This "merging" is the difference between a level that runs at 144fps and a level that won't even open lol
 
-![Import Example]([https://github.com/Adriannpropp/ImageToBlocks/raw/main/cat.pn](https://github.com/Adriannpropp/ImageToBlocks/blob/main/raw/main/cat.png)g)
+It uses **stb_image** for the heavy lifting and Geode's UI wrappers for the settings menu. It’s built to be fast, safe, and actually usable.
 
-## 🚀 Features
-
-* **Pixel-Perfect Accuracy**: Uses Object ID `211` (2.2 Colorable Pixel), the most optimized object for high-detail art.
-* **HSV Absolute Overrides**: Bypasses the limited Color Channel system. Colors are saved directly to the object using HSVA data, ensuring your art stays colored after saving and reloading.
-* **In-Editor UI**: Adds a dedicated **Green Plus (+)** button to the Editor toolbar for seamless workflow.
-* **Built-in Logger**: Real-time import reports showing image dimensions, pixel data, and placement counts.
-* **Performance Controls**: Adjustable `Step` (pixel skipping) and `Scale` settings to manage object counts and prevent lag.
-
-## 🛠️ Installation
-
-1.  Download the latest `.geode` file from the [Releases](https://github.com/Adriannpropp/ImageToBlocks/releases) page.
-2.  Drop it into your Geometry Dash `geode/mods` folder.
-3.  Restart the game.
-
-## 📖 How to Use
-
-1.  Open the **Level Editor**.
-2.  Locate the **Green Plus (+)** button on the top-right toolbar.
-3.  Select your image file.
-4.  **Configure Settings**:
-    * **Step**: Skip pixels to save on object count (Recommended: 2 or 3).
-    * **Scale**: Change the size of individual pixels (Recommended: 0.1).
-5.  Click **Import**.
-6.  Check the **Import Log** popup for details once the process completes.
-
-## 🏗️ Technical Specifications
-
-This mod is built using the **Geode SDK**. 
-* **Decoding**: Powered by `stb_image` for fast, lightweight image processing.
-* **Rendering**: Implements `m_hsv` absolute overrides on `GJSpriteColor` to force custom RGB values onto native objects.
-* **UI**: Built with custom `Popup` and `TextInput` nodes for a native look and feel.
-Developed by Adriann. Made for creators who care about detail.
+### How to use 
+- Import image, if the image looks weird do the following steps
+1. click **EDIT** in the editor, and select a block.
+2. click **HSV** the button, and set the 3rd row to black (move to bottom)
+3. if it somehow doesnt work, message mc_adriannn on discord 
