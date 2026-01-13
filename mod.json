@@ -1,23 +1,33 @@
 {
-    "geode": "4.10.0",
-    "gd": {
-        "win": "2.2074",
-        "android": "2.2074",
-        "mac": "2.2074",
-        "ios": "2.2074"
-    },
-    "id": "adriann.importer",
-    "name": "Image to Blocks",
-    "version": "1.0.0",
-    "developer": "Adriann",
-    "description": "Efficient image importer utilizing greedy meshing optimization for better performance.",
-    "links": {
-        "source": "https://github.com/Adriannpropp/ImageToBlocks",
-        "community": "https://discord.gg/UCAgKraDnr"
-    },
-    "resources": {
-        "files": [
-            "resources/*.png"
-        ]
-    }
+	"geode": "4.10.0",
+	"gd": {
+		"win": "2.2074",
+		"android": "2.2074",
+		"mac": "2.2074",
+		"ios": "2.2074"
+	},
+	"id": "adriann.imagetoblocks",
+	"name": "Image to Blocks",
+	"version": "1.0.0",
+	"developer": "Adriann",
+	"description": "Efficient image importer utilizing greedy meshing optimization for better performance. idk fish",
+	"dependencies": {
+		"geode.node-ids": ">=v1.20.0"
+	},
+	"tags": [
+		"editor",
+		"utility",
+		"enhancement",
+		"developer",
+		"performance"
+	],
+	"links": {
+		"source": "https://github.com/Adriannpropp/ImageToBlocks",
+		"community": "https://discord.gg/UCAgKraDnr"
+	},
+	"resources": {
+		"files": [
+			"resources/*.png"
+		]
+	}
 }
