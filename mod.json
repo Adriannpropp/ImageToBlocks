@@ -1,5 +1,5 @@
 {
-	"geode": "4.10.0",
+	"geode": "5.4.1",
 	"gd": {
 		"win": "2.2074",
 		"android": "2.2074",
@@ -10,7 +10,7 @@
 	"name": "Image to Blocks",
 	"version": "1.0.0",
 	"developer": "Adriann",
-	"description": "Efficient image importer utilizing greedy meshing optimization for better performance. idk fish",
+	"description": "it imports images into blocks",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0"
 	},
